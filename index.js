@@ -35,9 +35,25 @@ function writeLoop (fd, content, offset, cb) {
   })
 }
 
+function openLoop (dest, cb) {
+  open(dest, 'w', function (err, fd) {
+    if (err) {
+      if (err.code === 'EMFILE') {
+        openLoop(dest, cb)
+        return
+      }
+
+      cb(err)
+      return
+    }
+
+    cb(null, fd)
+  })
+}
+
 function writeAtomic (path, content, cb) {
   const tmp = join(tmpdir(), id())
-  open(tmp, 'w', function (err, fd) {
+  openLoop(tmp, function (err, fd) {
     if (err) {
       cb(err)
       return

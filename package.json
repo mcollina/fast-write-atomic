@@ -31,5 +31,10 @@
     "tap": "^12.1.1",
     "write-file-atomic": "^2.3.0"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test"
+    }
+  }
 }

@@ -149,3 +149,17 @@ test('unlinks if it errors during rename', (t) => {
     })
   })
 })
+
+test('write 2000 files in parallel', (t) => {
+  const MAX = 2000
+  t.plan(MAX)
+
+  for (var i = 0; i < MAX; i++) {
+    const dest = getDest()
+    const content = Buffer.allocUnsafe(4096) // 4 KB
+
+    writeAtomic(dest, content, (err) => {
+      t.error(err)
+    })
+  }
+})

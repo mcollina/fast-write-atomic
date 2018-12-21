@@ -1,5 +1,8 @@
 # fast-write-atomic
 
+[![Build
+Status](https://travis-ci.com/mcollina/fast-write-atomic.svg?branch=master)](https://travis-ci.com/mcollina/fast-write-atomic)
+
 Fast way to write a file atomically, for Node.js
 
 Status: *experimental*

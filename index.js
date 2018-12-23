@@ -1,8 +1,7 @@
 'use strict'
 
 const { open, write, close, rename, fsync, unlink } = require('fs')
-const { tmpdir } = require('os')
-const { join } = require('path')
+const { join, dirname } = require('path')
 
 var counter = 0
 
@@ -52,7 +51,7 @@ function openLoop (dest, cb) {
 }
 
 function writeAtomic (path, content, cb) {
-  const tmp = join(tmpdir(), id())
+  const tmp = join(dirname(path), '.' + id())
   openLoop(tmp, function (err, fd) {
     if (err) {
       cb(err)

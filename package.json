@@ -4,7 +4,8 @@
   "description": "Fast way to write a file atomically, for Node.js",
   "main": "index.js",
   "scripts": {
-    "test": "standard | snazzy && tap test/*test.js"
+    "test": "standard | snazzy && tap test/*test.js",
+    "cov": "tap --100 test/*test.js"
   },
   "repository": {
     "type": "git",

@@ -150,16 +150,191 @@ test('unlinks if it errors during rename', (t) => {
   })
 })
 
+test('unlinks if it errors during write', (t) => {
+  t.plan(4)
+
+  let _source
+  const writeAtomic = proxyquire('..', {
+    fs: {
+      open (dest, flags, cb) {
+        _source = dest
+        return open(dest, flags, cb)
+      },
+      write (fd, content, offset, cb) {
+        process.nextTick(cb, new Error('kaboom'))
+      },
+      close,
+      unlink (file, cb) {
+        t.equal(file, _source)
+        return unlink(file, cb)
+      }
+    }
+  })
+
+  const dest = getDest()
+  const content = Buffer.allocUnsafe(4096) // 4 KB
+
+  writeAtomic(dest, content, (err) => {
+    t.equal(err.message, 'kaboom')
+    readFile(dest, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+    readFile(_source, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+  })
+})
+
+test('unlinks if it errors during fsync', (t) => {
+  t.plan(4)
+
+  let _source
+  const writeAtomic = proxyquire('..', {
+    fs: {
+      open (dest, flags, cb) {
+        _source = dest
+        return open(dest, flags, cb)
+      },
+      write,
+      close,
+      fsync (fd, cb) {
+        process.nextTick(cb, new Error('kaboom'))
+      },
+      unlink (file, cb) {
+        t.equal(file, _source)
+        return unlink(file, cb)
+      }
+    }
+  })
+
+  const dest = getDest()
+  const content = Buffer.allocUnsafe(4096) // 4 KB
+
+  writeAtomic(dest, content, (err) => {
+    t.equal(err.message, 'kaboom')
+    readFile(dest, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+    readFile(_source, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+  })
+})
+
+test('retries if the write was not completed', (t) => {
+  t.plan(5)
+
+  let first = true
+  const writeAtomic = proxyquire('..', {
+    fs: {
+      open,
+      write (fd, content, offset, cb) {
+        t.pass('fs.write')
+        if (first) {
+          first = false
+          write(fd, content, 0, 16, cb)
+          return
+        }
+
+        write(fd, content, offset, cb)
+      },
+      close,
+      unlink
+    }
+  })
+
+  const dest = getDest()
+  const content = Buffer.allocUnsafe(4096) // 4 KB
+
+  writeAtomic(dest, content, (err) => {
+    t.error(err)
+    readFile(dest, (err, data) => {
+      t.error(err)
+      t.equal(Buffer.compare(data, content), 0)
+    })
+  })
+})
+
+test('errors if open errors', (t) => {
+  t.plan(3)
+
+  let _source
+  const writeAtomic = proxyquire('..', {
+    fs: {
+      open (dest, flags, cb) {
+        _source = dest
+        process.nextTick(cb, new Error('kaboom'))
+      }
+    }
+  })
+
+  const dest = getDest()
+  const content = Buffer.allocUnsafe(4096) // 4 KB
+
+  writeAtomic(dest, content, (err) => {
+    t.equal(err.message, 'kaboom')
+    readFile(dest, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+    readFile(_source, (err) => {
+      t.equal(err.code, 'ENOENT')
+    })
+  })
+})
+
+test('retries on EMFILE', (t) => {
+  t.plan(3)
+
+  let first = true
+  const writeAtomic = proxyquire('..', {
+    fs: {
+      open (dest, flags, cb) {
+        if (first) {
+          first = false
+          const err = new Error('kaboom')
+          err.code = 'EMFILE'
+          process.nextTick(cb, err)
+          return
+        }
+
+        return open(dest, flags, cb)
+      },
+      write,
+      close,
+      unlink
+    }
+  })
+
+  const dest = getDest()
+  const content = Buffer.allocUnsafe(4096) // 4 KB
+
+  writeAtomic(dest, content, (err) => {
+    t.error(err)
+    readFile(dest, (err, data) => {
+      t.error(err)
+      t.equal(Buffer.compare(data, content), 0)
+    })
+  })
+})
+
 test('write 2000 files in parallel', (t) => {
   const MAX = 2000
-  t.plan(MAX)
+  let total = 0
+  t.plan(1)
 
   for (var i = 0; i < MAX; i++) {
     const dest = getDest()
     const content = Buffer.allocUnsafe(4096) // 4 KB
 
     writeAtomic(dest, content, (err) => {
-      t.error(err)
+      if (err) {
+        t.error(err)
+        return
+      }
+
+      if (++total === MAX) {
+        t.pass(`${total} writes completed`)
+      }
     })
   }
 })

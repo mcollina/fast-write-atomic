@@ -16,7 +16,7 @@ function cleanup (dest, err, cb) {
 }
 
 function closeAndCleanup (fd, dest, err, cb) {
-  close(fd, cleanup.bind(dest, err, cb))
+  close(fd, cleanup.bind(null, dest, err, cb))
 }
 
 function writeLoop (fd, content, offset, cb) {
@@ -26,7 +26,7 @@ function writeLoop (fd, content, offset, cb) {
       return
     }
 
-    if (bytesWritten !== content.length + offset) {
+    if (bytesWritten !== content.length - offset) {
       writeLoop(fd, content, offset + bytesWritten, cb)
     } else {
       cb(null)
@@ -72,6 +72,7 @@ function writeAtomic (path, content, cb) {
 
         close(fd, function (err) {
           if (err) {
+            // TODO could we possibly be leaking a file descriptor here?
             cleanup(tmp, err, cb)
             return
           }

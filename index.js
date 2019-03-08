@@ -5,8 +5,6 @@ const { join, dirname } = require('path')
 
 var counter = 0
 
-const tmpFile = (path) => join(dirname(path), '.' + process.pid + '.' + counter++)
-
 function cleanup (dest, err, cb) {
   unlink(dest, function () {
     cb(err)
@@ -43,7 +41,7 @@ function openLoop (dest, cb) {
 }
 
 function writeAtomic (path, content, cb) {
-  const tmp = tmpFile(path)
+  const tmp = join(dirname(path), '.' + process.pid + '.' + counter++)
   openLoop(tmp, function (err, fd) {
     if (err) {
       cb(err)

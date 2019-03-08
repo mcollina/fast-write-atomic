@@ -5,10 +5,6 @@ const { join, dirname } = require('path')
 
 var counter = 0
 
-function id () {
-  return process.pid + '.' + counter++
-}
-
 function cleanup (dest, err, cb) {
   unlink(dest, function () {
     cb(err)
@@ -19,31 +15,25 @@ function closeAndCleanup (fd, dest, err, cb) {
   close(fd, cleanup.bind(null, dest, err, cb))
 }
 
-function writeLoop (fd, content, offset, cb) {
+function writeLoop (fd, content, contentLength, offset, cb) {
   write(fd, content, offset, function (err, bytesWritten) {
     if (err) {
       cb(err)
       return
     }
 
-    if (bytesWritten !== content.length - offset) {
-      writeLoop(fd, content, offset + bytesWritten, cb)
-    } else {
-      cb(null)
-    }
+    return (bytesWritten < contentLength - offset)
+      ? writeLoop(fd, content, contentLength, offset + bytesWritten, cb)
+      : cb(null)
   })
 }
 
 function openLoop (dest, cb) {
   open(dest, 'w', function (err, fd) {
     if (err) {
-      if (err.code === 'EMFILE') {
-        openLoop(dest, cb)
-        return
-      }
-
-      cb(err)
-      return
+      return (err.code === 'EMFILE')
+        ? openLoop(dest, cb)
+        : cb(err)
     }
 
     cb(null, fd)
@@ -51,14 +41,15 @@ function openLoop (dest, cb) {
 }
 
 function writeAtomic (path, content, cb) {
-  const tmp = join(dirname(path), '.' + id())
+  const tmp = join(dirname(path), '.' + process.pid + '.' + counter++)
   openLoop(tmp, function (err, fd) {
     if (err) {
       cb(err)
       return
     }
 
-    writeLoop(fd, content, 0, function (err) {
+    const contentLength = Buffer.byteLength(content)
+    writeLoop(fd, content, contentLength, 0, function (err) {
       if (err) {
         closeAndCleanup(fd, tmp, err, cb)
         return

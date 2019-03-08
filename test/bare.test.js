@@ -338,3 +338,12 @@ test('write 2000 files in parallel', (t) => {
     })
   }
 })
+
+test('multibyte unicode symbols', (t) => {
+  t.plan(1)
+  const dest = getDest()
+  const content = '{"name":"tajné jménoed25519","id":"QmSvTNE2Eo7SxRXjmEaZnE91cNpduKjYFBtd2LYC4Rsoeq"}'
+  writeAtomic(dest, content, (err) => {
+    t.error(err)
+  })
+})

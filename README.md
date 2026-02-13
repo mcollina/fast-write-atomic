@@ -1,15 +1,14 @@
 # fast-write-atomic
 
-[![Build
-Status](https://travis-ci.com/mcollina/fast-write-atomic.svg?branch=master)](https://travis-ci.com/mcollina/fast-write-atomic)
+Fast way to write a file atomically, for Node.js.
 
-Fast way to write a file atomically, for Node.js
+## Requirements
 
-Status: *experimental*
+- Node.js 20+
 
 ## Install
 
-```
+```bash
 npm i fast-write-atomic
 ```
 
@@ -30,11 +29,30 @@ writeFile('./hello', data, function (err) {
 })
 ```
 
+## Promise API
+
+`writeFile.promise(path, content)` returns a Promise and keeps the same atomicity behavior.
+
+```js
+const writeFile = require('fast-write-atomic')
+
+await writeFile.promise('./hello', Buffer.from('hello world'))
+```
+
+## Development
+
+```bash
+npm install
+npm test
+npm run cov
+node bench.js
+```
+
 ## Benchmarks
 
-Those benchmarks writes a 1 MB file a thousand times:
+Those benchmarks write a 1 MB file a thousand times:
 
-```
+```text
 benchWriteFileAtomic*1000: 9830.501ms
 benchFastWriteAtomic*1000: 8848.916ms
 benchWriteFileAtomic*1000: 9944.722ms
@@ -44,4 +62,3 @@ benchFastWriteAtomic*1000: 8997.108ms
 ## License
 
 MIT
-

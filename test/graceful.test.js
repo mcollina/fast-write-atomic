@@ -1,8 +1,9 @@
 'use strict'
 
-// Make sure to read the caveat below.
-const realFs = require('fs')
+const fs = require('node:fs')
 const gracefulFs = require('graceful-fs')
-gracefulFs.gracefulify(realFs)
+const runSuite = require('./suite')
 
-require('./bare.test.js')
+gracefulFs.gracefulify(fs)
+
+runSuite()

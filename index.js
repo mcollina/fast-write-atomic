@@ -1,22 +1,22 @@
 'use strict'
 
-const { open, write, close, rename, fsync, unlink } = require('fs')
-const { join, dirname } = require('path')
+const fs = require('node:fs')
+const { join, dirname } = require('node:path')
 
-var counter = 0
+let counter = 0
 
 function cleanup (dest, err, cb) {
-  unlink(dest, function () {
+  fs.unlink(dest, function () {
     cb(err)
   })
 }
 
 function closeAndCleanup (fd, dest, err, cb) {
-  close(fd, cleanup.bind(null, dest, err, cb))
+  fs.close(fd, cleanup.bind(null, dest, err, cb))
 }
 
 function writeLoop (fd, content, contentLength, offset, cb) {
-  write(fd, content, offset, function (err, bytesWritten) {
+  fs.write(fd, content, offset, function (err, bytesWritten) {
     if (err) {
       cb(err)
       return
@@ -29,7 +29,7 @@ function writeLoop (fd, content, contentLength, offset, cb) {
 }
 
 function openLoop (dest, cb) {
-  open(dest, 'w', function (err, fd) {
+  fs.open(dest, 'w', function (err, fd) {
     if (err) {
       return (err.code === 'EMFILE')
         ? openLoop(dest, cb)
@@ -55,20 +55,20 @@ function writeAtomic (path, content, cb) {
         return
       }
 
-      fsync(fd, function (err) {
+      fs.fsync(fd, function (err) {
         if (err) {
           closeAndCleanup(fd, tmp, err, cb)
           return
         }
 
-        close(fd, function (err) {
+        fs.close(fd, function (err) {
           if (err) {
             // TODO could we possibly be leaking a file descriptor here?
             cleanup(tmp, err, cb)
             return
           }
 
-          rename(tmp, path, (err) => {
+          fs.rename(tmp, path, function (err) {
             if (err) {
               cleanup(tmp, err, cb)
               return
@@ -80,9 +80,22 @@ function writeAtomic (path, content, cb) {
       })
     })
 
-    // clean up after oursevles, this is not needed
+    // clean up after ourselves, this is not needed
     // anymore
     content = null
+  })
+}
+
+writeAtomic.promise = function writeAtomicPromise (path, content) {
+  return new Promise(function (resolve, reject) {
+    writeAtomic(path, content, function (err) {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      resolve()
+    })
   })
 }
 

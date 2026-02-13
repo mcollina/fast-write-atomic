@@ -16,10 +16,10 @@ Run from repository root.
   - `npm run lint`
 - Full local validation:
   - `npm test`
-  - Runs `standard` then `node --test`.
+  - Runs `eslint .` (configured via `eslint.config.js` generated from `neostandard`) then `node --test --test-concurrency=1 test/*.test.js`.
 - Coverage:
   - `npm run cov`
-  - Runs `node --test --experimental-test-coverage`.
+  - Runs `node --test --test-concurrency=1 --experimental-test-coverage test/*.test.js`.
 - Run one test file:
   - `node --test test/bare.test.js`
   - `node --test test/graceful.test.js`
@@ -55,6 +55,7 @@ Run from repository root.
 - `test/suite.js`: shared test suite with all behavior checks.
 - `test/bare.test.js`: runs suite against native `fs`.
 - `test/graceful.test.js`: applies `graceful-fs.gracefulify(fs)` then runs same suite.
+- Tests should run with `--test-concurrency=1` because `gracefulify(fs)` mutates the shared `fs` module.
 
 Behavior guarded by tests includes:
 - successful writes,

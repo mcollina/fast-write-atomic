@@ -1,5 +1,8 @@
 # fast-write-atomic
 
+[![CI](https://github.com/mcollina/fast-write-atomic/actions/workflows/ci.yml/badge.svg)](https://github.com/mcollina/fast-write-atomic/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/fast-write-atomic.svg)](https://www.npmjs.com/package/fast-write-atomic)
+
 Fast way to write a file atomically, for Node.js.
 
 ## Requirements
